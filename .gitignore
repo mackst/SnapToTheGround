@@ -39,3 +39,4 @@ test*
 
 runVS.bat
 sttg_main/plugins/
+release/
