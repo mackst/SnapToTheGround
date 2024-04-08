@@ -31,7 +31,11 @@
 *.out
 *.app
 
+build/
 
 .vscode
 __pycache__
 test*
+
+runVS.bat
+sttg_main/plugins/

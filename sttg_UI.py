@@ -10,7 +10,7 @@ import os
 import maya.app.general.mayaMixin as mm
 import maya.cmds as cmds
 
-from PySide2 import QtWidgets, QtUiTools, QtGui, QtCore
+from PySide2 import QtWidgets, QtUiTools, QtCore
 
 import sttg_main.main as sttg
 reload(sttg)
@@ -21,7 +21,10 @@ class sttg_Widget(mm.MayaQWidgetDockableMixin, QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(sttg_Widget, self).__init__(parent=parent)
 
+        self.__pluginLoaded = False
+
         dirPath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+        self.__pluginDir = os.path.join(dirPath, 'sttg_main', 'plugins')
         self.__widget: QtWidgets.QWidget = QtUiTools.QUiLoader().load(os.path.join(dirPath, 'sttg_main', 'sttg_widget.ui'))
         
         layout = QtWidgets.QVBoxLayout(self)
@@ -35,6 +38,27 @@ class sttg_Widget(mm.MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.__widget.keySE.keySequenceChanged.connect(self.__shortcut.setKey)
         self.__widget.goBtn.clicked.connect(self.doIt)
         self.__shortcut.activated.connect(self.doIt)
+        self.__widget.pluginCB.stateChanged.connect(self.usePlugin)
+    def usePlugin(self, status: bool):
+        print(status, QtCore.Qt.Checked)
+        if status == QtCore.Qt.Checked:
+            self.loadPlugin()
+        else:
+            if self.__pluginLoaded: 
+                cmds.unloadPlugin('SnapToTheGround.mll')
+                self.__pluginLoaded = False
+    def loadPlugin(self) -> None:
+        name = 'SnapToTheGround.mll'
+        version = cmds.about(v=1)
+        ppath = os.path.join(self.__pluginDir, version, name)
+        if not os.path.exists(ppath): return
+        try:
+            cmds.loadPlugin(ppath, quiet=True)
+            self.__pluginLoaded = True
+        except Exception as e:
+            self.__widget.pluginCB.setChecked(False)
+            print(e)
+            
 
     def setGroundMesh(self) -> None:
         objs = cmds.ls(sl=True, l=1)
@@ -51,10 +75,16 @@ class sttg_Widget(mm.MayaQWidgetDockableMixin, QtWidgets.QWidget):
         if not objs: return
 
         if useGrid:
-            sttg.snapToTheGrid(objs)
+            if self.__pluginLoaded:
+                cmds.snapToTheGrid(*objs)
+            else:
+                sttg.snapToTheGrid(objs)
         else:
             if cmds.objExists(groundMesh):
-                sttg.snapToTheGroundMesh(objs, groundMesh, useCenterSnap, rayOffset)
+                if self.__pluginLoaded:
+                    cmds.snapToTheGroundMesh(*objs, g=groundMesh, c=useCenterSnap, r=rayOffset)
+                else:
+                    sttg.snapToTheGroundMesh(objs, groundMesh, useCenterSnap, rayOffset)
 
 
 
