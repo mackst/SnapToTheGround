@@ -3,7 +3,7 @@
 # 作者：石池
 
 
-from importlib import reload
+# from importlib import reload
 import inspect
 import os
 
@@ -13,7 +13,7 @@ import maya.cmds as cmds
 from PySide2 import QtWidgets, QtUiTools, QtCore
 
 import sttg_main.main as sttg
-reload(sttg)
+# reload(sttg)
 
 
 class sttg_Widget(mm.MayaQWidgetDockableMixin, QtWidgets.QWidget):
@@ -40,9 +40,10 @@ class sttg_Widget(mm.MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.__shortcut.activated.connect(self.doIt)
         self.__widget.pluginCB.stateChanged.connect(self.usePlugin)
     def usePlugin(self, status: bool):
-        print(status, QtCore.Qt.Checked)
         if status == QtCore.Qt.Checked:
             self.loadPlugin()
+            if not self.__pluginLoaded:
+                self.__widget.pluginCB.setChecked(False)
         else:
             if self.__pluginLoaded: 
                 cmds.unloadPlugin('SnapToTheGround.mll')
@@ -56,7 +57,6 @@ class sttg_Widget(mm.MayaQWidgetDockableMixin, QtWidgets.QWidget):
             cmds.loadPlugin(ppath, quiet=True)
             self.__pluginLoaded = True
         except Exception as e:
-            self.__widget.pluginCB.setChecked(False)
             print(e)
             
 
@@ -89,7 +89,7 @@ class sttg_Widget(mm.MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
 
 def onMayaDroppedPythonFile(obj):
-    reload(sttg)
+    # reload(sttg)
 
     sttg_window = sttg_Widget()
     sttg_window.show()
